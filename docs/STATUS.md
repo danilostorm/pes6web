@@ -14,7 +14,7 @@ Last evaluated: 2026-10-11. No playable runtime has been demonstrated.
 | Menus rendered | NOT YET VERIFIED | Native frame dump then browser check |
 | Match in-game | NOT YET VERIFIED | Select teams, start match, render players/ball |
 | Keyboard/gamepad/mobile touch | NOT YET VERIFIED | End-to-end browser hardware tests |
-| Unraid deployment | CONFIG ONLY | `compose.yaml`, `deploy/nginx.conf` (serve after actual build) |
+| Unraid deployment | CONFIG ONLY | `scripts/unraid-build.sh`, `compose.yaml`, `deploy/nginx.conf`; not tested on Unraid |
 
 ## Focused debugging loop
 

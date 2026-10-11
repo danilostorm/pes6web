@@ -52,6 +52,28 @@ PES6_PORT=8613 docker compose up -d
 
 The Nginx config emits COOP/COEP headers required by SharedArrayBuffer and exposes `/disc/` for byte-range asset reads. For initial debugging, use `scripts/serve.sh` first; it uses upstream's own server. Reverse proxies must preserve headers and Range semantics. **Exposing the result publicly may redistribute copyrighted data — use private access only unless you have rights.**
 
+
+### Unraid: compilação em Docker sem ocupar o armazenamento de imagens
+
+Deixe a ISO original em uma pasta local do Unraid, por exemplo `/mnt/user/Downloads/PES6.iso`. Depois execute:
+
+```bash
+cd /mnt/user/appdata
+git clone https://github.com/danilostorm/pes6web.git
+cd pes6web
+PES6_WORK_DIR=/mnt/user/Downloads/pes6web-work bash scripts/unraid-build.sh /mnt/user/Downloads/PES6.iso --native
+```
+
+O container-builder monta os arquivos e guarda SDK, disco extraído, ferramentas, logs e código gerado em `/mnt/user/Downloads/pes6web-work` (fora da imagem do Docker). O processo usa bastante CPU/RAM, vários GB e acesso à internet. O resultado de um build não significa que a partida funcione. **Não rode a compilação enquanto houver pouco espaço livre.**
+
+Para hospedar um build *após* existir `dist/index.html`:
+
+```bash
+PES6_WORK_DIR=/mnt/user/Downloads/pes6web-work PES6_PORT=8613 docker compose up -d
+```
+
+Se a ISO estiver em outro caminho, altere somente o argumento do arquivo. Arquivos do jogo continuam fora do GitHub.
+
 ## Testing
 
 ```bash

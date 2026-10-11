@@ -9,6 +9,6 @@ services:
     volumes:
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./dist:/usr/share/nginx/html:ro
-      - ./work/psp-web-recomp/games/pes6/root/disc:/usr/share/nginx/disc:ro
+      - ${PES6_WORK_DIR:-./work}/psp-web-recomp/games/pes6/root/disc:/usr/share/nginx/disc:ro
     security_opt:
       - no-new-privileges:true
