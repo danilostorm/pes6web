@@ -42,6 +42,22 @@ bash scripts/serve.sh              # http://localhost:8613/
 
 See [docs/STATUS.md](docs/STATUS.md) for measurable milestones.
 
+## First runtime smoke test (AEROCOOL, no recompilation)
+
+The real PSP executable now decrypts and compiles, but has not been confirmed to boot or draw PES6. After building with `--native`, use:
+```bash
+cd /mnt/user/appdata/pes6web
+git pull --ff-only
+PES6_WORK_DIR=/mnt/user/Downloads/pes6web-work bash scripts/smoke-native.sh 180 0
+# Later: optional headless OpenGL test (may need Mesa software rendering)
+# PES6_NATIVE_TIMEOUT=180 PES6_WORK_DIR=/mnt/user/Downloads/pes6web-work bash scripts/smoke-native.sh 180 1
+```
+The script runs without network and writes a private `run.log` and (if the guest draws) `frame.ppm` under `.../pes6web-work/diagnostics/native-*`. A zero exit code only reports that the native runner exited; it does not prove gameplay. Check the **first** runtime failure and actual rendered pixels.
+To send a diagnostic without proprietary files:
+```bash
+tail -n 100 "$(ls -1t /mnt/user/Downloads/pes6web-work/diagnostics/native-*/run.log | head -n 1)"
+```
+
 ## Serve a **working local build** from Unraid / Docker
 
 After `scripts/port.sh` creates `dist/index.html` and `work/psp-web-recomp/games/pes6/root/disc/`:
