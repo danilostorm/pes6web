@@ -27,15 +27,21 @@ IMAGE="${PES6_BUILDER_IMAGE:-pes6web-builder:local}"
 echo "Builder: $IMAGE"
 echo "Input: $SOURCE (read-only)"
 echo "Scratch on Unraid: $WORK"
-docker build -q -f "$ROOT/deploy/Dockerfile.builder" -t "$IMAGE" "$ROOT"
-docker run --rm -it \
+LOGDIR="$WORK/logs"
+mkdir -p "$LOGDIR"
+LOG="$LOGDIR/unraid-build-$(date +%Y%m%d-%H%M%S).log"
+echo "Full build log: $LOG"
+# Capture bootstrap, decryption and recompilation failures, not only the final port stage.
+docker build -q -f "$ROOT/deploy/Dockerfile.builder" -t "$IMAGE" "$ROOT" 2>&1 | tee -a "$LOG"
+docker run --rm -i \
   --shm-size=2g \
   -v "$ROOT:/project" \
   -v "$WORK:/project/work" \
   -v "$SOURCE:$TARGET:ro" \
   -w /project \
   -e "PES6_UPSTREAM_REF=${PES6_UPSTREAM_REF:-95d088239cfb09c22fe4ee9d98671ede371f2a4b}" \
+  -e "JOBS=${JOBS:-4}" \
   "$IMAGE" bash -lc \
-  'bash scripts/bootstrap.sh && bash scripts/build-decrypter.sh && bash scripts/port.sh "$@"' _ "$TARGET" "$@"
+  'bash scripts/bootstrap.sh && bash scripts/build-decrypter.sh && bash scripts/port.sh "$@"' _ "$TARGET" "$@" 2>&1 | tee -a "$LOG"
 echo "Build directory: $ROOT/dist"
 echo "To serve: PES6_WORK_DIR='$WORK' docker compose up -d"
