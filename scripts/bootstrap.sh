@@ -14,4 +14,6 @@ if [[ "$CURRENT" != "$REF" ]]; then
   git -C "$DEST" checkout --detach "$REF"
 fi
 (cd "$DEST" && bash scripts/setup.sh)
+# This idempotent patch only changes open-source host HLE; never game code.
+python3 "$ROOT/tools/patch_psp_modulemgr.py" "$DEST"
 echo "Toolchain ready: $DEST @ $(git -C "$DEST" rev-parse --short HEAD)"
