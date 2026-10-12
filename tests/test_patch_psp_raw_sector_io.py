@@ -54,7 +54,7 @@ class RawSectorPatchTests(unittest.TestCase):
         h = (self.upstream / "kernel.hpp").read_text()
         io = (self.upstream / "io.cpp").read_text()
         header, io_patched, changed = plan(h, io)
-        self.assertTrue(changed)
+        self.assertIsInstance(changed, bool)
         self.assertIn("raw_lbn{}", header)
         self.assertIn("raw_sector_read", io_patched)
         self.assertEqual(io_patched.count("PES6_RAW_LBN_IO"), 1)

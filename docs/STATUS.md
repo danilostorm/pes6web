@@ -73,6 +73,14 @@ Last evaluated: 2026-10-11 on AEROCOOL via Desktop Commander. Native PSP recompi
 - Next: inspect the four words of the guest `SceGeCallbackData` structure (signal handler/arg and finish handler/arg), and implement/deliver callback only if handlers are valid and guest uses the event. The GE trace alone does **not** establish missing FINISH callback delivery as the root cause of black screen.
 - The game image, extracted data and runtime test log remain private on AEROCOOL. No playable release or browser-gameplay validation.
 
+### 2026-10-12 direct development: ISO LBN + experimental GE FINISH
+
+- The Unraid daily PES6Web cron and its reboot registration were removed at user request; the unrelated Remote Desktop Commander supervisor stays online. The hourly ChatGPT automation was disabled. Source-only work now proceeds on demand.
+- Added native, opt-in ISO-backed window support for PSP raw-sector pseudo-paths such as disc0:/sce_lbn0x10_size0x4000. With no PES6_DISC_ISO supplied, the existing file behavior remains. Its source patch is idempotent and scoped specifically to the two seek handlers. 62 Python tests, synthetic pathname parser tests, C++ syntax compilation and GitHub CI succeeded. This does NOT imply runtime gameplay success; browser ISO sector support is not yet implemented.
+- Added an **experimental, disabled-by-default** GE FINISH event bridge (PES6_ENABLE_GE_FINISH_CALLBACKS=1). The graphics worker records FINISH command tokens in a bounded, mutex-protected queue; guest callbacks are scheduled on CPU threads and their stacks reclaimed on normal return. SceGeSetCallback and SceGeUnsetCallback now track the callback slots.
+- Native build and link succeeded after rebuilding 10 changed host units. 64 Python tests passed. Native A/B runs (240 frames each, callbacks off vs on) both exited normally but remained ALL BLACK (0/130560 visible pixels). An additional 180-frame opt-in run with PES6_TRACE_GE_FINISH_DISPATCH=1 confirmed the kernel scheduled callback id 0 at guest function address, but pixels stayed ALL BLACK. **Scheduling was observed; this does not prove every callback executed or that PSP interrupt semantics are fully emulated**. GE SIGNAL events still require separate handling.
+- No game executable, ISO, copyrighted resources or private test logs were committed. Do not publish a playable release until actual menu, controls and gameplay are verified.
+
 ## Focused debugging loop
 
 1. Build with `--native` and keep `work/logs/port-*.log` (passed on AEROCOOL).
