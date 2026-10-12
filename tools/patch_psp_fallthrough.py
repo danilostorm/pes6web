@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Idempotent source-only patch: scan bounded executable ranges for fallthrough
-entrypoints after PSP MIPS J/JR instructions, which can be indirect targets.
+entrypoints after PSP MIPS J/JR/BEQ-zero instructions, which can be indirect targets.
 
 Controls: PSPRECOMP_FALLTHROUGH_RANGES='0x088c0000-0x088c5000,...'
 This is opt-in to avoid exploding function discovery across the whole ISO.
@@ -9,7 +9,7 @@ from pathlib import Path
 import argparse
 
 ANCHOR = "    program.functions.reserve(program.seeds.size());\n"
-INSERT = """    // Opt-in: additional starts immediately after terminal J/JR delay slots.
+INSERT = """    // Opt-in: additional starts immediately after terminal J/JR/BEQ-zero delay slots.
     // PSP retail titles can reach these through computed jump tables.
     // Restrict scan to user-designated executable ranges; do not scan data.
     if (const char *extra_ranges = std::getenv("PSPRECOMP_FALLTHROUGH_RANGES")) {
@@ -30,7 +30,7 @@ INSERT = """    // Opt-in: additional starts immediately after terminal J/JR del
                 const auto pc = static_cast<std::uint32_t>(pc64);
                 if (!is_executable_address(program.executable_ranges, pc)) continue;
                 const auto decoded = decode_allegrex(memory.load32(pc));
-                if (decoded.kind == OpcodeKind::J || decoded.kind == OpcodeKind::Jr)
+                if (decoded.kind == OpcodeKind::J || decoded.kind == OpcodeKind::Jr ||\n                    (decoded.kind == OpcodeKind::Beq && (decoded.word & 0xFFFF0000u) == 0x10000000u))
                     add_seed(program.seeds, program.executable_ranges, pc + 8u,
                              "indirect_jr_or_j_fallthrough");
             }
@@ -41,9 +41,15 @@ INSERT = """    // Opt-in: additional starts immediately after terminal J/JR del
 
 def plan(source: str) -> tuple[str, bool]:
     if "indirect_jr_or_j_fallthrough" in source:
-        if INSERT not in source:
-            raise RuntimeError("Partial fallthrough patch detected")
-        return source, False
+        if INSERT in source:
+            return source, False
+        # Upgrade the previous J/JR-only revision in place.
+        old_predicate = 'if (decoded.kind == OpcodeKind::J || decoded.kind == OpcodeKind::Jr)'
+        new_predicate = '''if (decoded.kind == OpcodeKind::J || decoded.kind == OpcodeKind::Jr ||
+                    (decoded.kind == OpcodeKind::Beq && (decoded.word & 0xFFFF0000u) == 0x10000000u))'''
+        if source.count(old_predicate) != 1:
+            raise RuntimeError("Partial or unexpected fallthrough patch")
+        return source.replace(old_predicate, new_predicate, 1), True
     if source.count(ANCHOR) != 1:
         raise RuntimeError("PSPRecomp changed; expected exactly one anchor")
     if '#include <sstream>' not in source or '#include <cstdlib>' not in source:
@@ -59,7 +65,7 @@ def main() -> int:
     new_text, changed = plan(source.read_text())
     if changed:
         source.write_text(new_text)
-    print("PSP post-J/JR bounded CFG fallthrough patch:", "applied" if changed else "already applied")
+    print("PSP post-J/JR/BEQ-zero bounded CFG fallthrough patch:", "applied" if changed else "already applied")
     return 0
 
 
