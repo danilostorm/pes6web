@@ -9,7 +9,8 @@ class FallbackCfgTests(unittest.TestCase):
         patched, changed = plan(self.sample())
         self.assertTrue(changed)
         self.assertIn('is_executable_address(program.executable_ranges, pc)', patched)
-        self.assertIn('decoded.kind == OpcodeKind::Jr', patched)\n        self.assertIn('OpcodeKind::Beq && (decoded.word & 0xFFFF0000u) == 0x10000000u', patched)
+        self.assertIn('decoded.kind == OpcodeKind::Jr', patched)
+        self.assertIn('OpcodeKind::Beq && (decoded.word & 0xFFFF0000u) == 0x10000000u', patched)
         self.assertIn('PSPRECOMP_FALLTHROUGH_RANGES', patched)
         self.assertIn('hi - lo > 0x100000ull', patched)
 
