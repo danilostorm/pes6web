@@ -37,6 +37,16 @@ Last evaluated: 2026-10-11 on AEROCOOL via Desktop Commander. Native PSP recompi
 - The diagnostic instrumentation reports GPU counters even when boot halts before 60 frames. `tools/check_ppm.py` tests whether any RGB pixels changed; a nonblack frame alone does **not** prove a menu or gameplay.
 - Until a native run produces multiple frames *and* a nonblack image, do not label a package as playable or publish a release.
 
+## Latest conclusive AEROCOOL result (2026-10-11 23:59 Brazil)
+
+- `PSPRecomp` native build successfully completed (87/87 steps) after recovering `0x0897FEB4`: 10,482 function seeds, 352,118 emitted PCs and 90,866 registered blocks.
+- Latest native OpenGL smoke: **1,800/1,800 frames completed, 59.94 Hz emulated PSP timebase, but 0/130,560 nonblack framebuffer pixels**. The GL backend executes approximately one draw call per frame, 60 primitives and 480 sprites per 60-frame interval; the capture stays black.
+- Latest local private trace: `/mnt/user/Downloads/pes6web-work/diagnostics/native-20261011-235905-1742534/run.log`. No native build remains active.
+- Confirmed unimplemented syscall: `UtilsForUser::sceKernelSetGPO` (debug LED GPIO). The previous sema status NID is now handled, but restoring correct semaphore semantics by itself did **not** produce visible graphics.
+- A prior test with sema-status fix and before additional CFG recovery halted after 2 frames at `0x0897FEB4`; that address is now compiled and the guest again runs 1,800 frames. Not playable, no menu observed.
+- Browser build is **stale relative to native-only recovery**; no functional browser PES6 launch has been verified. Do not ship a release or imply 1,800 frames means gameplay is working.
+- Next investigation should trace **state progression and asset loads** (open/read operations and transition into GUI initialization) and inspect GE sprite textures / draw output; expanding MIPS seeds alone is no longer sufficient to explain the black display.
+
 ## Focused debugging loop
 
 1. Build with `--native` and keep `work/logs/port-*.log` (passed on AEROCOOL).
