@@ -60,16 +60,45 @@ def add_seed(seed_path: Path, addr: int, limit: int = 1000) -> bool:
     return True
 
 
+def add_fallthrough_range(range_file: Path, address: int, limit: int = 12) -> bool:
+    """Expand CFG discovery by one bounded 64 KiB executable page per novel halt.
+
+    The caller must first validate address against an on-disk executable PT_LOAD.
+    """
+    start = address & ~0xFFFF
+    end = start + 0x10000
+    text = range_file.read_text().strip() if range_file.exists() else ""
+    ranges = []
+    for token in filter(None, text.split(",")):
+        low_text, high_text = token.split("-", 1)
+        ranges.append((int(low_text, 0), int(high_text, 0)))
+    if any(low <= address < high for low, high in ranges):
+        return False
+    if len(ranges) >= limit:
+        raise ValueError("Maximum 12 additional 64 KiB CFG ranges reached")
+    ranges.append((start, end))
+    ranges.sort()
+    range_file.parent.mkdir(parents=True, exist_ok=True)
+    temp = range_file.with_suffix(".tmp")
+    temp.write_text(",".join(f"0x{low:08X}-0x{high:08X}" for low, high in ranges) + "\n")
+    temp.replace(range_file)
+    return True
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--log", type=Path, required=True)
     p.add_argument("--elf", type=Path, required=True)
     p.add_argument("--seeds", type=Path, required=True)
+    p.add_argument("--ranges", type=Path, help="Optional private bounded CFG range list")
     args = p.parse_args()
     addr = candidate(args.log.read_text(errors="replace"), args.elf.read_bytes())
     if not add_seed(args.seeds, addr):
         print(f"ALREADY_KNOWN 0x{addr:08X}: requires control-flow/HLE investigation")
         return 3
+    if args.ranges is not None:
+        expanded = add_fallthrough_range(args.ranges, addr)
+        print(f"Additional 64 KiB CFG region: {'added' if expanded else 'already covered'}")
     print(f"RECOVERED 0x{addr:08X}: verified in executable ELF; private seed list updated")
     return 0
 

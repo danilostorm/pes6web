@@ -21,16 +21,21 @@ for ((iteration=1; iteration<=N; iteration++)); do
     echo "Completed target frame count. Inspect framebuffer and gameplay before declaring success."
     exit 0
   fi
-  if ! python3 "$ROOT/tools/recover_native_entry.py" --log "$LOG" --elf "$ELF" --seeds "$SEEDS"; then
+  if ! python3 "$ROOT/tools/recover_native_entry.py" --log "$LOG" --elf "$ELF" --seeds "$SEEDS" --ranges "$WORK/diagnostics/auto-fallthrough-ranges.txt"; then
     echo "No safe automatic entry recovery. Inspect $LOG."
     exit 1
   fi
   ENTRIES="$(tr -d '\r\n' < "$SEEDS")"
+  DEFAULT_RANGES="0x08984000-0x08987000,0x08860000-0x08870000,0x08880000-0x08890000,0x088B0000-0x088C0000,0x088C0000-0x088C5000"
+  FALLTHROUGH_RANGES="${PES6_FALLTHROUGH_RANGES:-$DEFAULT_RANGES}"
+  if [[ -z "${PES6_FALLTHROUGH_RANGES:-}" && -s "$WORK/diagnostics/auto-fallthrough-ranges.txt" ]]; then
+    FALLTHROUGH_RANGES="$FALLTHROUGH_RANGES,$(tr -d '\r\n' < "$WORK/diagnostics/auto-fallthrough-ranges.txt")"
+  fi
   echo "Rebuilding native with $(awk -F, '{print NF}' <<< "$ENTRIES") private entry points"
   docker run --rm -i --network none --shm-size=2g \
     -v "$WORK:/project/work" -w /project/work/psp-web-recomp \
     -e JOBS=2 -e "PSPRECOMP_EXTRA_SEEDS=$ENTRIES" \
-    -e "PSPRECOMP_FALLTHROUGH_RANGES=${PES6_FALLTHROUGH_RANGES:-0x08984000-0x08987000,0x08860000-0x08870000,0x08880000-0x08890000,0x088B0000-0x088C0000,0x088C0000-0x088C5000}" \
+    -e "PSPRECOMP_FALLTHROUGH_RANGES=$FALLTHROUGH_RANGES" \
     pes6web-builder:local timeout --kill-after=15s 900s \
     bash -lc 'bash scripts/generate.sh pes6 games/pes6/root/EBOOT.BIN && GEN_OPT=1 bash scripts/build_native.sh pes6 disc0:/PSP_GAME/SYSDIR/EBOOT.BIN'
 done

@@ -2,7 +2,7 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
-from tools.recover_native_entry import candidate, add_seed
+from tools.recover_native_entry import candidate, add_seed, add_fallthrough_range
 
 
 def elf():
@@ -35,6 +35,15 @@ class RecoverNativeEntryTests(unittest.TestCase):
     def test_zero_word_rejected(self):
         with self.assertRaises(ValueError):
             candidate(self.log.replace("0x08810008", "0x08810004"), elf())
+
+    def test_range_enlargement_is_bounded_and_idempotent(self):
+        with tempfile.TemporaryDirectory() as td:
+            f = Path(td) / "ranges.txt"
+            self.assertTrue(add_fallthrough_range(f, 0x0886A7E8))
+            self.assertFalse(add_fallthrough_range(f, 0x0886AA10))
+            self.assertEqual(f.read_text().strip(), "0x08860000-0x08870000")
+            with self.assertRaises(ValueError):
+                add_fallthrough_range(f, 0x08880000, limit=1)
 
     def test_atomic_private_list_and_duplicates(self):
         with tempfile.TemporaryDirectory() as td:

@@ -41,6 +41,9 @@ fi
 echo "Opt-in CFG recovery entries: $(awk -F, '{print NF}' <<< "$PSPRECOMP_EXTRA_SEEDS")"
 # Bounded J/JR fallthrough discovery based on observed native guest halts.
 export PSPRECOMP_FALLTHROUGH_RANGES="${PES6_FALLTHROUGH_RANGES:-0x08984000-0x08987000,0x08860000-0x08870000,0x08880000-0x08890000,0x088B0000-0x088C0000,0x088C0000-0x088C5000}"
+if [[ -s "$ROOT/work/diagnostics/auto-fallthrough-ranges.txt" && -z "${PES6_FALLTHROUGH_RANGES:-}" ]]; then
+  PSPRECOMP_FALLTHROUGH_RANGES="$PSPRECOMP_FALLTHROUGH_RANGES,$(tr -d '\r\n' < "$ROOT/work/diagnostics/auto-fallthrough-ranges.txt")"
+fi
 echo "Scoped post-J/JR discovery: $PSPRECOMP_FALLTHROUGH_RANGES"
 mkdir -p "$ROOT/work/logs"
 LOG="$ROOT/work/logs/port-$(date +%Y%m%d-%H%M%S).log"
