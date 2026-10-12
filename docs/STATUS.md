@@ -81,6 +81,16 @@ Last evaluated: 2026-10-11 on AEROCOOL via Desktop Commander. Native PSP recompi
 - Native build and link succeeded after rebuilding 10 changed host units. 64 Python tests passed. Native A/B runs (240 frames each, callbacks off vs on) both exited normally but remained ALL BLACK (0/130560 visible pixels). An additional 180-frame opt-in run with PES6_TRACE_GE_FINISH_DISPATCH=1 confirmed the kernel scheduled callback id 0 at guest function address, but pixels stayed ALL BLACK. **Scheduling was observed; this does not prove every callback executed or that PSP interrupt semantics are fully emulated**. GE SIGNAL events still require separate handling.
 - No game executable, ISO, copyrighted resources or private test logs were committed. Do not publish a playable release until actual menu, controls and gameplay are verified.
 
+### 2026-10-12 raw ISO asynchronous timing experiment
+
+- Compared identical native binaries with a private, read-only mounted ISO; used PES6_DISC_ISO to enable raw logical sector reads. With no ISO variable, raw-sector support remains inactive.
+- Immediate read: sceIoOpen(disc0:/sce_lbn0x10_size0x4000) and sceIoReadAsync of 0x4000 succeeded, then guest invalid memory access at 0x6E3ED9A7, guest PC 0x0887A1A8. Native run reported 2 frames, all-black image.
+- Deferred read: disabled-by-default PES6_RAW_ASYNC_DEFER=1 delays raw-sector completion until next frame I/O poll. Trace confirms read-raw-queued, 16384 bytes read, read-raw-complete and asynchronous result delivery. The SAME invalid address and PC occurred after 4 frames, again all-black.
+- This A/B result rules out the tested one-frame delay alone as a fix. It does not establish whether the cause is guest parsing, recompiler arithmetic, or another missing PSP service. No claim of playable PES6 is justified.
+- Reference PPSSPP accepts raw disc paths as bounded ISO sectors and consumes async poll results. Unlike PPSSPP, the host does not fully model the one-shot sceIoPollAsync result lifecycle. This is an additional, independently testable compatibility gap, not proven as crash cause.
+- Private A/B logs: /mnt/cache/pes6web-native-trace/raw-async-instant.log and raw-async-deferred.log. No ISO, protected executable, generated guest code, or private logs are committed.
+- 66 source tests passed locally, native host changes recompiled, experimental native executable linked and A/B native runs completed. Browser was not rebuilt or tested.
+
 ## Focused debugging loop
 
 1. Build with `--native` and keep `work/logs/port-*.log` (passed on AEROCOOL).
