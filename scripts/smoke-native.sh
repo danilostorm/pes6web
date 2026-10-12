@@ -16,7 +16,7 @@ WORK="$(realpath "$WORK")"
 NATIVE="$WORK/psp-web-recomp/build/native-pes6/profiles/web/pspweb_pes6"
 ELF="$WORK/psp-web-recomp/games/pes6/root/EBOOT.BIN"
 DISC="$WORK/psp-web-recomp/games/pes6/root/disc"
-[[ -f "$NATIVE" ]] || { echo "Missing native runner; compile with --native first" >&2; exit 1; }
+[[ -s "$NATIVE" && -x "$NATIVE" ]] || { echo "Native runner missing, empty, or not executable; wait for build/link to finish" >&2; exit 1; }
 [[ -s "$ELF" ]] || { echo "Missing decrypted executable: $ELF" >&2; exit 1; }
 [[ -d "$DISC/PSP_GAME" ]] || { echo "Missing extracted game files: $DISC" >&2; exit 1; }
 command -v docker >/dev/null || { echo "Docker not available" >&2; exit 1; }
@@ -28,10 +28,16 @@ LOG="$OUTPUT/run.log"
 CAPTURE="$OUTPUT/frame.ppm"
 echo "PES6 runtime diagnostic: frames=$FRAMES GL=$GL timeout=${TIMEOUT}s"
 echo "No rebuilding and no network. Results: $OUTPUT"
+# Host-to-Docker diagnostics stay disabled unless explicitly requested.
+TRACE_ENV=()
+for key in PES6_TRACE_GE_EVENTS PES6_TRACE_IO PES6_TRACE_GE PSPWEB_TRACE_HLE; do
+  if [[ -n "${!key:-}" ]]; then TRACE_ENV+=(-e "$key=${!key}"); fi
+done
 set +e
 docker run --rm --network none --shm-size=1g \
   --security-opt no-new-privileges:true \
   -e LIBGL_ALWAYS_SOFTWARE=1 \
+  "${TRACE_ENV[@]}" \
   -v "$WORK:/work" \
   "$IMAGE" timeout --signal=TERM --kill-after=10s "$TIMEOUT" \
   /work/psp-web-recomp/build/native-pes6/profiles/web/pspweb_pes6 \
@@ -49,6 +55,10 @@ if [[ -f "$CAPTURE" ]]; then
   python3 "$ROOT/tools/check_ppm.py" "$CAPTURE"
 else
   echo "No frame captured. Check the log for the first error."
+fi
+if [[ -n "${PES6_TRACE_GE_EVENTS:-}" ]]; then
+  echo "=== PSP GE event trace (first 75) ==="
+  grep -E '^\\[ge-(event|list)\\]' "$LOG" | head -n 75 || true
 fi
 echo "Native test process exit: $STATUS"
 echo "To inspect: tail -n 100 '$LOG'"
