@@ -21,6 +21,7 @@ python3 "$ROOT/tools/patch_psp_fallthrough.py" "$DEST"
 python3 "$ROOT/tools/patch_psp_umdhle.py" "$DEST"
 python3 "$ROOT/tools/patch_psp_native_diagnostics.py" "$DEST"
 python3 "$ROOT/tools/patch_psp_display_hcount.py" "$DEST"
+python3 "$ROOT/tools/patch_psp_sema_status.py" "$DEST"
 python3 "$ROOT/tools/patch_psp_devctl.py" "$DEST"
 python3 "$ROOT/tools/patch_psp_alarm.py" "$DEST"
 # Rebuild analyzer/codegen tools only when upstream sources changed (Ninja is incremental).
