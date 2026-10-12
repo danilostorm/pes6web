@@ -27,12 +27,25 @@ def plan(h, k, d):
              "    void sceUmdWaitDriveStatCB(Ctx &ctx);\n"
              "    void sceKernelRegisterSubIntrHandler(Ctx &ctx);\n"
              "    void sceKernelEnableSubIntr(Ctx &ctx);\n")
-    h = swap(h, "    std::map<std::int32_t, EventFlag> event_flags_;\n",
-             "    std::map<std::int32_t, EventFlag> event_flags_;\n"
-             "    std::set<std::int32_t> callbacks_;\n"
-             "    std::int32_t umd_callback_id_{};\n"
-             "    struct SubIntr { std::uint32_t handler{}, arg{}; bool enabled{}; };\n"
-             "    std::map<std::uint64_t, SubIntr> sub_intrs_;\n")
+    callback_state = (
+        "    std::set<std::int32_t> callbacks_;\n",
+        "    std::int32_t umd_callback_id_{};\n",
+        "    struct SubIntr { std::uint32_t handler{}, arg{}; bool enabled{}; };\n",
+        "    std::map<std::uint64_t, SubIntr> sub_intrs_;\n",
+    )
+    present = [h.count(member) for member in callback_state]
+    if all(count == 1 for count in present):
+        # Preserve other state fields that may occur between these members
+        # (e.g. a MemoryStick callback registry added by another patch).
+        pass
+    elif all(count == 0 for count in present):
+        h = swap(h, "    std::map<std::int32_t, EventFlag> event_flags_;\n",
+                 "    std::map<std::int32_t, EventFlag> event_flags_;\n"
+                 + "".join(callback_state))
+    else:
+        raise RuntimeError(
+            f"Pre-existing or duplicated callback state; refusing unsafe patch: {present}"
+        )
 
     k = swap(k, "void Kernel::sceKernelCreateCallback(Ctx &ctx) { finish(ctx, static_cast<std::uint32_t>(new_uid())); }\n",
              """void Kernel::sceKernelCreateCallback(Ctx &ctx) {
