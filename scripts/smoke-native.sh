@@ -30,7 +30,7 @@ echo "PES6 runtime diagnostic: frames=$FRAMES GL=$GL timeout=${TIMEOUT}s"
 echo "No rebuilding and no network. Results: $OUTPUT"
 # Host-to-Docker diagnostics stay disabled unless explicitly requested.
 TRACE_ENV=()
-for key in PES6_TRACE_GE_EVENTS PES6_TRACE_IO PES6_TRACE_GE PSPWEB_TRACE_HLE; do
+for key in PES6_TRACE_GE_EVENTS PES6_TRACE_GE_CALLBACK PES6_TRACE_IO PES6_TRACE_GE PSPWEB_TRACE_HLE; do
   if [[ -n "${!key:-}" ]]; then TRACE_ENV+=(-e "$key=${!key}"); fi
 done
 set +e
