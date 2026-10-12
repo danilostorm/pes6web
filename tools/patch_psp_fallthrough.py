@@ -41,7 +41,7 @@ INSERT = """    // Opt-in: additional starts immediately after terminal J/JR/BEQ
 
 def plan(source: str) -> tuple[str, bool]:
     if "indirect_jr_or_j_fallthrough" in source:
-        if INSERT in source:
+        if INSERT in source or 'OpcodeKind::Beq && (decoded.word & 0xFFFF0000u) == 0x10000000u' in source:
             return source, False
         # Upgrade the previous J/JR-only revision in place.
         old_predicate = 'if (decoded.kind == OpcodeKind::J || decoded.kind == OpcodeKind::Jr)'
