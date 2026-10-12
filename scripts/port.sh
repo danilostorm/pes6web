@@ -31,7 +31,14 @@ if [[ -z "${PSP_DECRYPT:-}" && -x "$ROOT/work/pspdecrypt/pspdecrypt" ]]; then
 fi
 # PES6 code section at 0x0897FD08 is reached indirectly and missing from base CFG.
 # Keep overrides scoped to the PES6 build, never modify the retail ISO.
-export PSPRECOMP_EXTRA_SEEDS="${PES6_EXTRA_SEEDS:-0x0897FD08}"
+if [[ -n "${PES6_EXTRA_SEEDS:-}" ]]; then
+  export PSPRECOMP_EXTRA_SEEDS="$PES6_EXTRA_SEEDS"
+elif [[ -s "$ROOT/work/diagnostics/verified-extra-seeds.txt" ]]; then
+  export PSPRECOMP_EXTRA_SEEDS="$(tr -d '\r\n' < "$ROOT/work/diagnostics/verified-extra-seeds.txt")"
+else
+  export PSPRECOMP_EXTRA_SEEDS=0x0897FD08
+fi
+echo "Opt-in CFG recovery entries: $(awk -F, '{print NF}' <<< "$PSPRECOMP_EXTRA_SEEDS")"
 mkdir -p "$ROOT/work/logs"
 LOG="$ROOT/work/logs/port-$(date +%Y%m%d-%H%M%S).log"
 echo "Porting $NAME; local log: $LOG"
