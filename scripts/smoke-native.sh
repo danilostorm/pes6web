@@ -45,6 +45,7 @@ echo "=== PES6 first-boot findings (exit 0 does not mean playable) ==="
 grep -E '(\[pspweb\] (ran |guest stopped:|fatal:|wrote )|\[hle\] unimplemented|\[watchdog\]|No recompiled function registered)' "$LOG" | tail -n 45 || true
 if [[ -f "$CAPTURE" ]]; then
   echo "Frame capture: $CAPTURE ($(du -h "$CAPTURE" | cut -f1))"
+  python3 "$ROOT/tools/check_ppm.py" "$CAPTURE"
 else
   echo "No frame captured. Check the log for the first error."
 fi
