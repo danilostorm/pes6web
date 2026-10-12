@@ -28,7 +28,7 @@ SEED_REPLACEMENT = """    program.seeds = collect_initial_seeds(elf, memory, loa
 
 
 def plan(source: str) -> tuple[str, bool]:
-    if SEED_REPLACEMENT in source:
+    if '"configured_indirect_target"' in source:
         if INCLUDES not in source:
             raise RuntimeError("Partially patched upstream: missing includes")
         return source, False
