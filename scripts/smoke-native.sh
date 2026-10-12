@@ -2,6 +2,7 @@
 # Native boot diagnostic for previously built PES6 PSP. Assets and logs stay private.
 # Usage: PES6_WORK_DIR=/mnt/user/Downloads/pes6web-work bash scripts/smoke-native.sh [frames] [gl 0|1]
 set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORK="${PES6_WORK_DIR:-/mnt/user/Downloads/pes6web-work}"
 FRAMES="${1:-180}"
 GL="${2:-0}"
@@ -42,7 +43,7 @@ docker run --rm --network none --shm-size=1g \
 STATUS="${PIPESTATUS[0]}"
 set -e
 echo "=== PES6 first-boot findings (exit 0 does not mean playable) ==="
-grep -E '(\[pspweb\] (ran |guest stopped:|fatal:|wrote )|\[hle\] unimplemented|\[watchdog\]|No recompiled function registered)' "$LOG" | tail -n 45 || true
+grep -E '(\[pspweb\] (ran |guest stopped:|fatal:|wrote )|\[hle\] unimplemented|\[watchdog\]|\[pspweb\] (ge-exit|gl-exit)|No recompiled function registered)' "$LOG" | tail -n 45 || true
 if [[ -f "$CAPTURE" ]]; then
   echo "Frame capture: $CAPTURE ($(du -h "$CAPTURE" | cut -f1))"
   python3 "$ROOT/tools/check_ppm.py" "$CAPTURE"
