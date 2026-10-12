@@ -58,6 +58,13 @@ Last evaluated: 2026-10-11 on AEROCOOL via Desktop Commander. Native PSP recompi
 - Reproducible source-only instrumentation: `tools/patch_psp_private_diagnostics.py` (opt-in `PES6_TRACE_IO=1`, `PES6_TRACE_GE=1`) and `tools/patch_psp_umd_callback_dispatch.py`. Local suite: **52 tests passed**. Logs, captures and commercial ISO assets remain private on AEROCOOL.
 - The **browser WebAssembly build has not been validated as playable** and is behind the native-only changes. Do not publish a PES6Web gameplay release or infer that completing 1,800 frames means gameplay is functional.
 
+### Next validation: GE command callbacks and synchronization
+
+- The GE HLE currently registers `sceGeSetCallback` as a return-zero stub. The upstream GE interpreter handles list FINISH as a register update, but does not yet deliver PSP SIGNAL/FINISH interrupts to the game's registered callback; **this is a suspected compatibility gap, not a proven black-screen root cause**.
+- New opt-in instrumentation `tools/patch_psp_ge_event_trace.py` prints bounded GE list starts and SIGNAL/FINISH/END commands without changing emulation behavior. `scripts/smoke-native.sh` now forwards `PES6_TRACE_GE_EVENTS=1` into the isolated Docker runner and rejects a zero-length/non-executable binary.
+- On AEROCOOL **after reconnecting and rebuilding the native host**: `PES6_TRACE_GE_EVENTS=1 PES6_TRACE_GE=1 PES6_WORK_DIR=/mnt/user/Downloads/pes6web-work bash scripts/smoke-native.sh 180 1`. Compare `[ge-event]` and `[ge-prim]` logs with the existing GE clear-only baseline. These new GE event traces have not yet been run on the game ISO.
+- Source/static GitHub CI passed for new instrumentation; actual game rendering remains unverified. All ISO, generated proprietary code, and private traces must stay off the public repository.
+
 ## Focused debugging loop
 
 1. Build with `--native` and keep `work/logs/port-*.log` (passed on AEROCOOL).
