@@ -11,7 +11,7 @@ Last evaluated: 2026-10-11 on AEROCOOL via Desktop Commander. Native PSP recompi
 | Decrypt retail executable | DONE | AEROCOOL log: tag `C0CB167C` decrypted to a 1,914,920-byte ELF |
 | Generate C++ from actual PES6 ELF | DONE | 6,757 seeds; 343,280 emitted PCs; 87,727 registered blocks; 117 units |
 | Compile native / Wasm | DONE | Native and browser builds linked successfully on AEROCOOL; no gameplay confirmed |
-| Native boot | ACTIVE DEBUGGING | HLE module lookup fixed; first halt `0x0897FD08` cleared. Subsequent indirect-entry gaps `0x08986598`, `0x089864DC`, `0x089864D0`, `0x08984284` cleared. First native host frame reached after further indirect-entry recovery. Last validated halt: `0x088BE928`, 1 frame. A BEQ-zero post-delay-slot CFG fix is currently rebuilding on AEROCOOL. |
+| Native boot | ACTIVE DEBUGGING | HLE module lookup fixed; first halt `0x0897FD08` cleared. Subsequent indirect-entry gaps `0x08986598`, `0x089864DC`, `0x089864D0`, `0x08984284` cleared. First native host frame reached after further indirect-entry recovery. Last validated halt: `0x088254B4` (subsequently added as a private verified entry), still 1 black frame. A bounded 4-attempt native recovery loop is running; no menu is rendered. |
 | Menus rendered | NOT YET VERIFIED | Native frame dump then browser check |
 | Match in-game | NOT YET VERIFIED | Select teams, start match, render players/ball |
 | Keyboard/gamepad/mobile touch | NOT YET VERIFIED | End-to-end browser hardware tests |
@@ -21,7 +21,7 @@ Last evaluated: 2026-10-11 on AEROCOOL via Desktop Commander. Native PSP recompi
 
 - First native test: `we10psp` loaded with 229 imports; 87746 registered entries; unsupported Allegrex `0x00000000` at `0x0897FD08`, `user_main` return address `0x0897E524`, zero frames, framebuffer 0.
 - Unimplemented NID `ModuleMgrForUser::0xD8B73127` is `sceKernelGetModuleIdByAddress`. Returned zero from fallback; now a source-only pinned-upstream HLE patch associates the reserved module range with an UID and returns `0x8002012E` for unknown ranges.
-- CI checks the source-only patches' idempotency; 20 source unit tests also passed directly on AEROCOOL. **Passing CI does not mean PES6 boots.** The module lookup fallback no longer appears in the native log.
+- CI checks the source-only patches' idempotency; 28 source unit tests passed directly on AEROCOOL (including private ELF validation, bounded boot recovery and UMD HLE patch checks). **Passing CI does not mean PES6 boots.** The module lookup fallback no longer appears in the native log.
 - A source-only, opt-in `PSPRECOMP_EXTRA_SEEDS` patch recovers indirect jump landing addresses without uploading retail game code. The private verified seed file at `work/diagnostics/verified-extra-seeds.txt` is reused by `scripts/port.sh`; 338 candidate entries from the startup region are in the current private seed file and passed an incremental native build. AEROCOOL reached 1 host frame; framebuffer `0x04044000`, all-black captured PPM. After recovering `0x088C4330` (post-JR), the guest reached additional semaphores/threads but stopped at `0x088BE928`, after the unconditional `BEQ $zero,$zero` at `0x088BE920`. The bounded CFG patch now recognizes this branch pattern, and a new native + Wasm build is in progress.
 - The invalid function entry may be a separate recompilation/control-flow bug. Do not mask it by forcing the PC forward or fabricating a successful run.
 
