@@ -47,6 +47,17 @@ Last evaluated: 2026-10-11 on AEROCOOL via Desktop Commander. Native PSP recompi
 - Browser build is **stale relative to native-only recovery**; no functional browser PES6 launch has been verified. Do not ship a release or imply 1,800 frames means gameplay is working.
 - Next investigation should trace **state progression and asset loads** (open/read operations and transition into GUI initialization) and inspect GE sprite textures / draw output; expanding MIPS seeds alone is no longer sufficient to explain the black display.
 
+## 2026-10-12: native black-screen investigation (verified on AEROCOOL)
+
+- The native PES6 launcher builds and runs for **1,800 guest frames** without a guest halt, but the captured 480x272 framebuffer contains **0/130,560 nonblack pixels**, consistently from frame 120 through frame 1800.
+- **Actual async game file reads succeed** from the extracted ISO: `disc0:/PSP_GAME/USRDIR/0_sound.afs` (6,144 bytes), `0_text.afs` (96,256 bytes), `e_text.afs` (4,096 bytes), and `over.afs` (2,048 bytes). Initial file-access failure is *not* the explanation for the blank display.
+- The virtual controller is polled (about 298 reads per 300 guest frames). Pressing **Start** and **Cross** over a 600-frame test did not produce any nonblack pixels or change the 1-primitive/8-sprite-per-frame drawing pattern.
+- UMD activation now queues the READY/PRESENT/READABLE callback and `sceKernelCheckCallback` delivers the guest function via `call_guest`; a private 600-frame test confirmed delivery. This HLE correctness fix **did not** make a visible frame.
+- **GE primitive tracing shows only screen-clear draws:** the first 18 primitives were PSP sprite primitive type 6 with `clear=1`. After startup, the guest repeatedly submits 1 primitive / 8 sprites per frame; the graphics backend can render GL calls but the game is not yet submitting menu or gameplay geometry.
+- HLE profiling over 300 frames shows repeated activity (including `sceCtrlReadBufferPositive`, `sceDisplayWaitVblankStart`, `sceGeListEnQueue`, audio and semaphore operations), not a generic guest crash. The scene initialization/progress and potential missing firmware event behavior are the next debugging target.
+- Reproducible source-only instrumentation: `tools/patch_psp_private_diagnostics.py` (opt-in `PES6_TRACE_IO=1`, `PES6_TRACE_GE=1`) and `tools/patch_psp_umd_callback_dispatch.py`. Local suite: **52 tests passed**. Logs, captures and commercial ISO assets remain private on AEROCOOL.
+- The **browser WebAssembly build has not been validated as playable** and is behind the native-only changes. Do not publish a PES6Web gameplay release or infer that completing 1,800 frames means gameplay is functional.
+
 ## Focused debugging loop
 
 1. Build with `--native` and keep `work/logs/port-*.log` (passed on AEROCOOL).
