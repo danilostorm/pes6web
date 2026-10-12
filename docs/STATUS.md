@@ -91,6 +91,15 @@ Last evaluated: 2026-10-11 on AEROCOOL via Desktop Commander. Native PSP recompi
 - Private A/B logs: /mnt/cache/pes6web-native-trace/raw-async-instant.log and raw-async-deferred.log. No ISO, protected executable, generated guest code, or private logs are committed.
 - 66 source tests passed locally, native host changes recompiled, experimental native executable linked and A/B native runs completed. Browser was not rebuilt or tested.
 
+### 2026-10-12 memory fault narrowing and combined tests
+
+- Four actual native configurations were compared against the user's read-only ISO: raw I/O immediate with GE callback dispatch disabled/enabled, and raw I/O delayed by one frame with GE dispatch disabled/enabled. All four reached **the same guest invalid RAM address 0x6E3ED9A7 at guest PC 0x0887A1A8**: immediate tests after 2 frames; delayed tests after 4 frames; all yielded **0/130560 visible pixels**. Host native process exit code 0 only means the diagnostic runner exited; the guest was **halted**, not playable.
+- The sector read itself returned all 16384 requested bytes. A standalone source-only C++ harness, generated from the project's existing RAW_HELPER and RAW_READ implementation and fed by a synthetic ISO image, verified a 16384-byte sector window, checked every output byte, guard/sentinel bytes around destination, virtual EOF, relative seek, rejection of an invalid guest destination and an out-of-range LBA. No proprietary game code was compiled into this test.
+- The open-source psprecomp::GuestMemory unaligned LWL/LWR operations passed 84 synthetic comparisons (28 addresses, both load merge orders and an uncached alias) using the existing native core library. This verifies only that memory helper, **not** all recompiled CPU instructions or the game's call path.
+- A direct four-byte little-endian search in the ISO9660 sector window found **no literal occurrence of 0x6E3ED9A7**. This does not identify where the pointer came from: it may be calculated or originate elsewhere. Register dumps may also contain stale cached registers on unwinding.
+- The baseline (with missing raw-sector open) repetitively called sceIoPollAsync on an invalid descriptor 0x80010002. Providing that device access removes the repeated failed operation but exposes the same deterministically reproducible memory fault. PSP async result lifecycle still merits a separate compatibility test; one-shot behavior is documented by PPSSPP but is not proven to cause this specific crash.
+- **Next priority:** narrow the provenance of the pointer used by the faulting guest instruction using authorized diagnostic metadata, and check the AOT memory/load/branch semantics without forcing the PC forward or fabricating success. Do not enable the GE FINISH or raw I/O timing experiments by default. WebAssembly and gameplay are not yet verified.
+
 ## Focused debugging loop
 
 1. Build with `--native` and keep `work/logs/port-*.log` (passed on AEROCOOL).
