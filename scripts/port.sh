@@ -29,6 +29,9 @@ fi
 if [[ -z "${PSP_DECRYPT:-}" && -x "$ROOT/work/pspdecrypt/pspdecrypt" ]]; then
   export PSP_DECRYPT="$ROOT/scripts/decrypt-adapter.sh"
 fi
+# PES6 code section at 0x0897FD08 is reached indirectly and missing from base CFG.
+# Keep overrides scoped to the PES6 build, never modify the retail ISO.
+export PSPRECOMP_EXTRA_SEEDS="${PES6_EXTRA_SEEDS:-0x0897FD08}"
 mkdir -p "$ROOT/work/logs"
 LOG="$ROOT/work/logs/port-$(date +%Y%m%d-%H%M%S).log"
 echo "Porting $NAME; local log: $LOG"
