@@ -17,6 +17,7 @@ fi
 # This idempotent patch only changes open-source host HLE; never game code.
 python3 "$ROOT/tools/patch_psp_modulemgr.py" "$DEST"
 python3 "$ROOT/tools/patch_psp_extra_seeds.py" "$DEST"
+python3 "$ROOT/tools/patch_psp_fallthrough.py" "$DEST"
 # Rebuild analyzer/codegen tools only when upstream sources changed (Ninja is incremental).
 (cd "$DEST" && bash scripts/build_tools.sh)
 echo "Toolchain ready: $DEST @ $(git -C "$DEST" rev-parse --short HEAD)"
