@@ -13,6 +13,14 @@ import argparse
 def replace_once(source: str, old: str, new: str, label: str) -> str:
     if new in source:
         return source
+    # Earlier AEROCOOL experiments used slightly different comments while
+    # implementing the same C++ bodies; recognize these stable code anchors.
+    existing = {
+        "callback dispatcher": "call_guest(ctx, cb.entry, {1u, reason, cb.common}",
+        "activation handler": "void Kernel::sceUmdActivate(Ctx &ctx) {",
+    }
+    if label in existing and existing[label] in source:
+        return source
     if source.count(old) != 1:
         raise RuntimeError(f"{label}: incompatible upstream or partial patch")
     return source.replace(old, new, 1)
