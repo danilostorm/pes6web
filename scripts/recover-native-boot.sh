@@ -30,7 +30,7 @@ for ((iteration=1; iteration<=N; iteration++)); do
   docker run --rm -i --network none --shm-size=2g \
     -v "$WORK:/project/work" -w /project/work/psp-web-recomp \
     -e JOBS=2 -e "PSPRECOMP_EXTRA_SEEDS=$ENTRIES" \
-    -e "PSPRECOMP_FALLTHROUGH_RANGES=${PES6_FALLTHROUGH_RANGES:-0x08984000-0x08987000,0x08860000-0x08870000,0x088B0000-0x088C0000,0x088C0000-0x088C5000}" \
+    -e "PSPRECOMP_FALLTHROUGH_RANGES=${PES6_FALLTHROUGH_RANGES:-0x08984000-0x08987000,0x08860000-0x08870000,0x08880000-0x08890000,0x088B0000-0x088C0000,0x088C0000-0x088C5000}" \
     pes6web-builder:local timeout --kill-after=15s 900s \
     bash -lc 'bash scripts/generate.sh pes6 games/pes6/root/EBOOT.BIN && GEN_OPT=1 bash scripts/build_native.sh pes6 disc0:/PSP_GAME/SYSDIR/EBOOT.BIN'
 done
