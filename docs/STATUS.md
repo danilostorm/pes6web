@@ -65,6 +65,14 @@ Last evaluated: 2026-10-11 on AEROCOOL via Desktop Commander. Native PSP recompi
 - On AEROCOOL **after reconnecting and rebuilding the native host**: `PES6_TRACE_GE_EVENTS=1 PES6_TRACE_GE=1 PES6_WORK_DIR=/mnt/user/Downloads/pes6web-work bash scripts/smoke-native.sh 180 1`. Compare `[ge-event]` and `[ge-prim]` logs with the existing GE clear-only baseline. These new GE event traces have not yet been run on the game ISO.
 - Source/static GitHub CI passed for new instrumentation; actual game rendering remains unverified. All ISO, generated proprietary code, and private traces must stay off the public repository.
 
+### Remote Agent Recovery and GE sync trace (2026-10-12)
+
+- Remote Desktop Commander supervisor installed on AEROCOOL as PID 1889161, PPID 1, independently of SSH, via `scripts/install-remote-commander-unraid.sh`. Reboot persistence configured but not yet reboot-tested.
+- The source-only `PES6_TRACE_GE_EVENTS=1` diagnostic was compiled and run natively: **300 frames completed, framebuffer all black**. PSP GE lists execute `FINISH` followed by `END`; **no SIGNAL command was observed**. The first 18 GE draw primitives were `type=6` sprites with `clear=1`.
+- The guest calls `sceGeSetCallback` once with a non-null guest callback-data pointer, but current runtime registers this NID to a return-zero stub. HLE trace recorded 447 `sceGeListEnQueue` calls, 151 `sceGeDrawSync` calls and 150 vblank waits over 150 guest frames; graphics processing and vblank progress, but scene geometry never appears.
+- Next: inspect the four words of the guest `SceGeCallbackData` structure (signal handler/arg and finish handler/arg), and implement/deliver callback only if handlers are valid and guest uses the event. The GE trace alone does **not** establish missing FINISH callback delivery as the root cause of black screen.
+- The game image, extracted data and runtime test log remain private on AEROCOOL. No playable release or browser-gameplay validation.
+
 ## Focused debugging loop
 
 1. Build with `--native` and keep `work/logs/port-*.log` (passed on AEROCOOL).
